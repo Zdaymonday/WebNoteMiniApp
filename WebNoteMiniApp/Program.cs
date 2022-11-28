@@ -1,46 +1,46 @@
-using Microsoft.AspNetCore.Mvc;
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<NoteDb>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
+builder.Services.AddTransient<INoteRepository, NoteRepository>();
 
 var app = builder.Build();
 
-app.MapGet("/notes", async (NoteDb db) => await db.Notes.ToArrayAsync());
-app.MapGet("/notes/{id}", async (NoteDb db, int id) =>
+if (app.Environment.IsDevelopment())
 {
-    var user = await db.Notes.FirstOrDefaultAsync(n => n.Id == id);
+    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+
+app.MapGet("/notes", async (INoteRepository rep) => await rep.GetAll());
+app.MapGet("/notes/{id}", async (INoteRepository rep, int id) =>
+{
+    var user = await rep.GetById(id);
     if (user == null) return Results.NotFound();
     return Results.Ok(user);
 });
 
-app.MapPost("/notes", async ([FromBody] Note note, [FromServices] NoteDb db) =>
+app.MapPost("/notes", async ([FromBody] Note note, [FromServices] INoteRepository rep) =>
 {
-    await db.Notes.AddAsync(note);
-    var res = await db.SaveChangesAsync();
-    if (res != 0) return Results.Created($"/notes/{note.Id}", note);
-    return Results.BadRequest();
+    await rep.Add(note);
+    return Results.Created($"/notes/{note.Id}", note);
 });
 
-app.MapPut("/notes", async (NoteDb db, [FromBody] Note note) =>
+app.MapPut("/notes", async (INoteRepository rep, [FromBody] Note note) =>
 {
-    var isExist = await db.Notes.ContainsAsync(note);
-    if (isExist) db.Notes.Update(note);
-    else return Results.NotFound();
-    await db.SaveChangesAsync();
+    await rep.Update(note);
     return Results.Ok();
 });
-app.MapDelete("/notes/{id}", async (NoteDb db,  int id) =>
+app.MapDelete("/notes/{id}", async (INoteRepository rep,  int id) =>
 {
-    var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == id);
-
-    if (note is null)  Results.NotFound();
-
-    db.Notes.Remove(note);
-    await db.SaveChangesAsync();
+    await rep.Remove(id);
     return Results.Ok();
 });
 

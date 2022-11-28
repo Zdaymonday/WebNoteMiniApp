@@ -9,7 +9,19 @@ builder.Services.AddDbContext<NoteDb>(opt =>
 });
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
 
+builder.Services.AddCors(opt =>
+{
+    opt.AddPolicy("AllowAll", opt =>
+    {
+        opt.AllowAnyHeader();
+        opt.AllowAnyMethod();
+        opt.AllowAnyOrigin();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
 {

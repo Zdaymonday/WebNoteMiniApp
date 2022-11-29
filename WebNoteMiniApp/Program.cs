@@ -1,3 +1,10 @@
+using Azure;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using WebNoteMiniApp.Auth;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -8,6 +15,25 @@ builder.Services.AddDbContext<NoteDb>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
+builder.Services.AddSingleton<IUserRepository> (new UserRepository());
+builder.Services.AddSingleton<ITokenService>(new TokenService());
+
+builder.Services.AddAuthorization(); 
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer(opt =>
+    {
+        opt.TokenValidationParameters = new()
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        };
+    });
 
 builder.Services.AddCors(opt =>
 {
@@ -21,6 +47,9 @@ builder.Services.AddCors(opt =>
 
 var app = builder.Build();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
@@ -29,6 +58,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+app.MapPost("/login", [AllowAnonymous] (IUserRepository userRep, ITokenService tokenServ, [FromBody]UserModel model, HttpContext context) =>
+{
+    var dto = userRep.GetUser(model);
+    if (dto == null) return Results.Unauthorized();
+    var key = builder.Configuration["Jwt:Key"];
+    var issue = builder.Configuration["Jwt:Issuer"];
+
+    var token = tokenServ.BuildToken(key, issue, dto);
+
+    return Results.Ok(token);
+});
 
 
 app.MapGet("/notes", async (INoteRepository rep) => await rep.GetAllAsync())

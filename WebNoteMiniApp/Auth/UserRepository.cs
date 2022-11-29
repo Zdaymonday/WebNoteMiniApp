@@ -13,8 +13,8 @@
         {
             return users.FirstOrDefault(u =>
                 string.Equals(u.password, userModel.Password) &&
-                string.Equals(u.username, userModel.UserName)) ??
-                throw new Exception("Да иди нахуй exception");
+                string.Equals(u.username, userModel.UserName, StringComparison.CurrentCultureIgnoreCase)) ??
+                throw new Exception("User not found exception");
         }
     }
 }

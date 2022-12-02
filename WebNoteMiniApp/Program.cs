@@ -1,10 +1,3 @@
-using Azure;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using WebNoteMiniApp.Auth;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -15,10 +8,10 @@ builder.Services.AddDbContext<NoteDb>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
-builder.Services.AddSingleton<IUserRepository> (new UserRepository());
+builder.Services.AddSingleton<IUserRepository>(new UserRepository());
 builder.Services.AddSingleton<ITokenService>(new TokenService());
 
-builder.Services.AddAuthorization(); 
+builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer(opt =>
     {
@@ -47,10 +40,12 @@ builder.Services.AddCors(opt =>
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowAll");
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -60,7 +55,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.MapPost("/login", [AllowAnonymous] (IUserRepository userRep, ITokenService tokenServ, [FromBody]UserModel model, HttpContext context) =>
+app.MapPost("/login", [AllowAnonymous] (IUserRepository userRep, ITokenService tokenServ, [FromBody] UserModel model, HttpContext context) =>
 {
     var dto = userRep.GetUser(model);
     if (dto == null) return Results.Unauthorized();
@@ -73,12 +68,12 @@ app.MapPost("/login", [AllowAnonymous] (IUserRepository userRep, ITokenService t
 });
 
 
-app.MapGet("/notes", async (INoteRepository rep) => await rep.GetAllAsync())
+app.MapGet("/notes", [Authorize] async (INoteRepository rep) => await rep.GetAllAsync())
     .Produces<List<Note>>(StatusCodes.Status200OK)
     .WithName("GetAllNotes")
     .WithTags("Getters");
 
- 
+
 app.MapGet("/notes/{id:int}", async (INoteRepository rep, int id) =>
     {
         var note = await rep.GetByIdAsync(id);
@@ -100,7 +95,7 @@ app.MapGet("/notes/{title}", async (INoteRepository rep, string title) =>
     .WithName("Get notes which contain the search patten in the title")
     .WithTags("Getters");
 
-app.MapPost("/notes", async ([FromBody] Note note, [FromServices] INoteRepository rep) =>
+app.MapPost("/notes",  async ([FromBody] Note note, [FromServices] INoteRepository rep) =>
     {
         await rep.AddAsync(note);
         return Results.Created($"/notes/{note.Id}", note);

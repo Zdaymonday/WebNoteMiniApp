@@ -1,6 +1,9 @@
 <template>
-    <div class="edit-note-form-wrapper">
-        <div class="edit-note-form-inner">
+    <div class="edit-note-form-wrapper" @click="closeForm" @dragover="dragOver">
+        <div class="edit-note-form-inner" draggable="true"  @click.stop 
+            @dragstart="dragStart"
+            @dragend="dragEnd"          
+            @mousedown="mDown">
             <h3>{{edit_note.title}}</h3>
             <textarea rows="10"  :value="this.new_text" @change="onNoteTextChanged">
             </textarea>
@@ -14,6 +17,7 @@
 
 <script>
 import { mapActions } from 'vuex';
+
 export default {
     name: "edit-note-form",
     props: {
@@ -36,11 +40,40 @@ export default {
         },
         closeForm() {
             this.$emit("update:show", false)
-        },        
+        }, 
+        onKeyPres(e){
+            if(e.key === "Escape") this.closeForm();
+        },
+        onFormClick(e){
+            e.stopPropagation();
+        },
+        dragStart(e){            
+            console.log("drag start. target: " + e.target)
+        },
+        dragEnd(e){
+            console.log("drag end. target: " + e.target)
+            console.log("drag end. target style left: " + e.target.style.left)
+            console.log("drag end. dragX: " + this.dragX)
+            e.target.style.left = this.dragX + "px";
+            e.target.style.top = this.dragY+ "px";
+        },
+        dragOver(e){
+            e.preventDefault();
+            this.dragX = e.clientX - this.offsetX;
+            this.dragY = e.clientY - this.offsetY;            
+        },
+        mDown(e){
+            this.offsetX = e.clientX - e.target.getBoundingClientRect().left;
+            this.offsetY = e.clientY - e.target.getBoundingClientRect().top;
+        }
     },
     data(){
         return {
             new_text: "",
+            dragX: 0,
+            dragY: 0,
+            offsetX: 0,
+            offsetY: 0,
         }
     },
     mounted() {
@@ -49,24 +82,26 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .edit-note-form-wrapper{
     left: 0;right: 0; top: 0; bottom: 0;
     position: fixed;
-    background: #76767610;
+    background: #76767690;
 }
 .edit-note-form-inner{
+    position: absolute;
     border-radius: 20px;
     padding: 20px;
-    margin-top: 200px;
-    margin-left: 100px;
+    top: 200px;
+    left: 100px;
     background: #FFFFFFF1;
     display: flex;
     flex-direction: column;
-    max-width: 30%;
+    width: fit-content;
+    min-width: 30%;
 }
 textarea{
     height: max-content;
-    
+    min-width: 400px;
 }
 </style>

@@ -48,8 +48,11 @@ export default {
 
 .tile-text {
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: pre-wrap;
+    /*overflow-wrap: break-word;*/
+    overflow-wrap: anywhere;
     overflow: hidden;
+    
 }
 
 .tile-footer {

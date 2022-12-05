@@ -1,32 +1,42 @@
 <template>
     <div class="login-form-container">
         <div class="login-form-header">Login to get your notes</div>
-        <div v-if="hasErrors">Неверный логин/пароль</div>
+        <div v-if="this.getErrorState">
+            <div v-for="error in this.getErrors" :key="error">{{error}}</div>
+        </div>
         <input type="text" :value="this.username" @input="onLoginInput" placeholder="Your login" />
         <input type="text" :value="this.password" @change="onPasswordInput" placeholder="Password" />
-        <button @click="login">Login</button>
+        <div class="buttons">
+            <form-button @click="onRegister">Register</form-button>
+            <form-button @click="onLogin">Login</form-button>
+        </div>
     </div>
 </template>
 
 <script>
-import {mapActions} from 'vuex';
+import {mapActions, mapGetters} from 'vuex';
 export default {    
     name: "login-form",
     data() {
         return {
             username: "",
             password: "",
-            hasErrors: false,
         }
     },
     methods: {
         ...mapActions({
-            tryLogin: "auth/login",
+            login: "auth/login",
+            register: "auth/register",
         }),
-        async login(e) {
+        async onLogin(e) {
             e.preventDefault();
             let credentials = {userName:this.username, password:this.password};
-            this.tryLogin(credentials);
+            this.login(credentials);
+        },
+        onRegister(e){
+            e.preventDefault();
+            let credentials = {userName:this.username, password:this.password};
+            this.register(credentials);
         },
 
         onLoginInput(e){
@@ -36,6 +46,12 @@ export default {
         onPasswordInput(e){
             this.password = e.target.value;
         }
+    },
+    computed: {
+        ...mapGetters({
+            getErrorState : "auth/getErrorStatus",
+            getErrors: "auth/getErrors",
+        }),        
     }
 }
 </script>
@@ -57,9 +73,12 @@ input, .login-form-header{
     font-size: 22px;
 }
 
-button{
-    font-size:22px ;
-    align-self: flex-end;
-    width: 20%;
+.buttons{
+    display: flex;
+    justify-content: flex-end;
+}
+.buttons button{
+    margin-left: 5px;
+    padding: 2px;
 }
 </style>

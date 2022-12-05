@@ -11,7 +11,7 @@ builder.Services.AddDbContext<NoteDb>(opt =>
 });
 builder.Services.AddDbContext<UserDb>(opt =>
 {
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("note_users"));
 });
 
 builder.Services.AddIdentity<NoteUser, IdentityRole>().AddEntityFrameworkStores<UserDb>();
@@ -80,9 +80,9 @@ app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManag
     var user = new NoteUser() { UserName = model.UserName };
     var result = await userManager.CreateAsync(user, model.Password);
 
-    if (result.Succeeded) return Results.LocalRedirect("login");
+    if (!result.Succeeded) return Results.BadRequest(result.Errors);
 
-    return Results.BadRequest(result.Errors);
+    return Results.LocalRedirect("/login", preserveMethod: true);
 });
 
 

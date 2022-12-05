@@ -1,9 +1,4 @@
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using WebNoteMiniApp.Auth;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using WebNoteMiniApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +9,7 @@ builder.Services.AddDbContext<NoteDb>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
-builder.Services.AddDbContext<UserDb>( opt =>
+builder.Services.AddDbContext<UserDb>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
@@ -24,7 +19,7 @@ builder.Services.AddIdentity<NoteUser, IdentityRole>().AddEntityFrameworkStores<
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
 builder.Services.AddSingleton<ITokenService>(new TokenService());
 
-builder.Services.AddAuthorization(); 
+builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer(opt =>
     {
@@ -53,10 +48,12 @@ builder.Services.AddCors(opt =>
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowAll");
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -66,9 +63,9 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.MapPost("/login", [AllowAnonymous] async (SignInManager<NoteUser> signInManager, ITokenService tokenServ, [FromBody]UserModel model) =>
+app.MapPost("/login", [AllowAnonymous] async (SignInManager<NoteUser> signInManager, ITokenService tokenServ, [FromBody] UserModel model) =>
 {
-    var result = await signInManager.PasswordSignInAsync(model.UserName, model.Password,false,false);
+    var result = await signInManager.PasswordSignInAsync(model.UserName, model.Password, false, false);
     if (!result.Succeeded) return Results.Unauthorized();
     var key = builder.Configuration["Jwt:Key"];
     var issue = builder.Configuration["Jwt:Issuer"];
@@ -80,21 +77,21 @@ app.MapPost("/login", [AllowAnonymous] async (SignInManager<NoteUser> signInMana
 
 app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManager, ITokenService tokenServ, [FromBody] UserModel model, HttpContext context) =>
 {
-    var user = new NoteUser() { UserName= model.UserName };
+    var user = new NoteUser() { UserName = model.UserName };
     var result = await userManager.CreateAsync(user, model.Password);
-    
-    if (result.Succeeded) return Results.LocalRedirect("login");    
+
+    if (result.Succeeded) return Results.LocalRedirect("login");
 
     return Results.BadRequest(result.Errors);
 });
 
 
-app.MapGet("/notes", async (INoteRepository rep) => await rep.GetAllAsync())
+app.MapGet("/notes", [Authorize] async (INoteRepository rep) => await rep.GetAllAsync())
     .Produces<List<Note>>(StatusCodes.Status200OK)
     .WithName("GetAllNotes")
     .WithTags("Getters");
 
- 
+
 app.MapGet("/notes/{id:int}", async (INoteRepository rep, int id) =>
     {
         var note = await rep.GetByIdAsync(id);

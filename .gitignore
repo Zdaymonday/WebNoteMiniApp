@@ -1,3 +1,7 @@
 .vs/
+.vscode/
 WebNoteMiniApp/bin
 WebNoteMiniApp/obj
+WebNoteMiniApp.Vue/node_modules/
+WebNoteMiniApp.Vue/obj/
+WebNoteMiniApp.Vue/.vscode/

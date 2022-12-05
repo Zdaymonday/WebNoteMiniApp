@@ -1,9 +1,9 @@
-using Azure;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebNoteMiniApp.Auth;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using WebNoteMiniApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +14,14 @@ builder.Services.AddDbContext<NoteDb>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
 });
+builder.Services.AddDbContext<UserDb>( opt =>
+{
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("note_data"));
+});
+
+builder.Services.AddIdentity<NoteUser, IdentityRole>().AddEntityFrameworkStores<UserDb>();
+
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
-builder.Services.AddSingleton<IUserRepository> (new UserRepository());
 builder.Services.AddSingleton<ITokenService>(new TokenService());
 
 builder.Services.AddAuthorization(); 
@@ -60,16 +66,26 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.MapPost("/login", [AllowAnonymous] (IUserRepository userRep, ITokenService tokenServ, [FromBody]UserModel model, HttpContext context) =>
+app.MapPost("/login", [AllowAnonymous] async (SignInManager<NoteUser> signInManager, ITokenService tokenServ, [FromBody]UserModel model) =>
 {
-    var dto = userRep.GetUser(model);
-    if (dto == null) return Results.Unauthorized();
+    var result = await signInManager.PasswordSignInAsync(model.UserName, model.Password,false,false);
+    if (!result.Succeeded) return Results.Unauthorized();
     var key = builder.Configuration["Jwt:Key"];
     var issue = builder.Configuration["Jwt:Issuer"];
 
-    var token = tokenServ.BuildToken(key, issue, dto);
+    var token = tokenServ.BuildToken(key, issue, new(model.UserName, model.Password));
 
     return Results.Ok(token);
+});
+
+app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManager, ITokenService tokenServ, [FromBody] UserModel model, HttpContext context) =>
+{
+    var user = new NoteUser() { UserName= model.UserName };
+    var result = await userManager.CreateAsync(user, model.Password);
+    
+    if (result.Succeeded) return Results.LocalRedirect("login");    
+
+    return Results.BadRequest(result.Errors);
 });
 
 

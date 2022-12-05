@@ -1,23 +1,14 @@
 <template>
     <div class="edit-note-form-wrapper" @click="closeForm" @dragover="dragOver">
-        <div class="edit-note-form-inner" draggable="true"  @click.stop 
-            @dragstart="dragStart"
+        <note-form :edit_note="edit_note" v-model:innershow="innershow" draggable="true"  
+            @click.stop 
             @dragend="dragEnd"          
-            @mousedown="mDown">
-            <h3>{{edit_note.title}}</h3>
-            <textarea rows="10"  :value="this.new_text" @change="onNoteTextChanged">
-            </textarea>
-            <div>
-                <button @click="closeForm">Abort</button>
-                <button @click="saveChanges">Save changes</button>
-            </div>
-        </div>
+            @mousedown="mDown">            
+        </note-form>
     </div>
 </template>
 
 <script>
-import { mapActions } from 'vuex';
-
 export default {
     name: "edit-note-form",
     props: {
@@ -25,40 +16,19 @@ export default {
         show: [Boolean],
     },
     methods: {
-        ...mapActions({
-            editNote: "notes/editNote",
-        }),
         onNoteTextChanged(e){
             this.new_text = e.target.value;
         },
-        saveChanges() {
-            let new_note = {};
-            Object.assign(new_note, this.edit_note);
-            new_note.text = this.new_text;
-            this.editNote(new_note);
-            this.closeForm();
-        },
         closeForm() {
             this.$emit("update:show", false)
-        }, 
-        onKeyPres(e){
-            if(e.key === "Escape") this.closeForm();
-        },
-        onFormClick(e){
-            e.stopPropagation();
-        },
-        dragStart(e){            
-            console.log("drag start. target: " + e.target)
         },
         dragEnd(e){
-            console.log("drag end. target: " + e.target)
-            console.log("drag end. target style left: " + e.target.style.left)
-            console.log("drag end. dragX: " + this.dragX)
             e.target.style.left = this.dragX + "px";
             e.target.style.top = this.dragY+ "px";
         },
         dragOver(e){
-            e.preventDefault();
+            e.preventDefault();  
+            e.stopPropagation();          
             this.dragX = e.clientX - this.offsetX;
             this.dragY = e.clientY - this.offsetY;            
         },
@@ -74,10 +44,14 @@ export default {
             dragY: 0,
             offsetX: 0,
             offsetY: 0,
+            innershow: true,
         }
     },
-    mounted() {
-        this.new_text = this.edit_note.text;
+    watch: {
+        innershow(newValue){
+            if(!newValue)
+                this.$emit("update:show", false);
+        }
     }
 }
 </script>
@@ -103,5 +77,14 @@ export default {
 textarea{
     height: max-content;
     min-width: 400px;
+}
+.form-buttons{
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+button{
+    margin-left: 10px;
+    width: 150px;
 }
 </style>

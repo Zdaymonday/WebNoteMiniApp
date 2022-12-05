@@ -1,11 +1,11 @@
 <template>
     <div class="note-container">
-        <note-tile v-for="note in this.$store.state.notes.notes" :note="note" :key="note.id"></note-tile>
+        <note-tile v-for="note in this.getNotes" :note="note" :key="note.id"></note-tile>
     </div>
 </template>
 
 <script>
-import {mapActions} from 'vuex';
+import {mapActions, mapGetters} from 'vuex';
 export default {
     name: "note-list",
     methods:{
@@ -13,8 +13,14 @@ export default {
             loadNotes: "notes/getNotes",
         })
     },
-    async mounted(){
-        await this.loadNotes();
+    computed:{
+        ...mapGetters({
+            getNotes : "notes/getNoteList",
+        }),
+    },
+    mounted(){
+        console.log("note list is mounted");
+        this.loadNotes();
     }
 }
 </script>

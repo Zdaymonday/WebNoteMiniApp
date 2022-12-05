@@ -8,21 +8,53 @@
         </div>
         <div class="navbar-buttons">
             <div><button>
-                    <div class="inner">Add Post</div>
+                    <div @click="changeWindowState('note')" class="inner">Notes</div>
                 </button></div>
             <div><button>
-                    <div class="inner">Events</div>
+                    <div @click="changeWindowState('add')" class="inner">Add Post</div>
                 </button></div>
             <div><button>
-                    <div class="inner">Logout</div>
+                    <div @click="changeWindowState('events')"  class="inner">Events</div>
+                </button></div>
+            <div><button>
+                    <div v-if="isAuth" @click="logout" class="inner">Logout</div>
+                    <div v-else @click="openLoginWindow" class="inner">Login</div>
                 </button></div>
         </div>
     </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 export default {
     name: "top-navbar",
+    computed: {
+        ...mapGetters({
+            isAuth : "auth/isAuth"
+        }),
+    },
+    props: {
+        state: [Object],
+    },
+    methods: {
+        changeWindowState(page){
+            let method = "setNotePage";
+            if(page === "add") method = "setAddPage";
+            if(page === "events") method = "setEventPage";
+            this.$store.commit(`nav/${method}`, null, {root:true});
+        },
+        logout(){
+            this.$store.dispatch("auth/logout",null, {root:true});
+        }
+    },
+    data() {
+        return{
+            addNoteWindow: false,
+            noteList : {note:true, add:false, events:false},
+            addNote : {note:false, add:true, events:false},
+            eventList : {note:false, add:false, events:true},
+        }
+    }
 }
 </script>
 

@@ -1,14 +1,15 @@
-import {createStore} from "vuex";
+import { createStore } from "vuex";
 import { authModule } from "@/Store/authModule";
 import { noteModule } from "@/Store/noteModule";
+import { navigation } from "@/Store/navigation";
 
 export default createStore({
     state: {
-        
+
     },
 
     mutations: {
-        
+
     },
 
     getters: {
@@ -21,7 +22,8 @@ export default createStore({
     modules: {
         auth: authModule,
         notes: noteModule,
+        nav: navigation,
     },
 
-    
+
 })

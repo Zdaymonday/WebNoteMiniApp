@@ -20,7 +20,8 @@ export default {
     props: {
         note: {
             type: Object,
-        }
+        },
+        _show: [Boolean],
     },
     data() {
         return {

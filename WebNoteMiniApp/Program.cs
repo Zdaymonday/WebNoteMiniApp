@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -86,13 +87,16 @@ app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManag
 });
 
 
-app.MapGet("/notes", [Authorize] async (INoteRepository rep) => await rep.GetAllAsync())
+app.MapGet("/notes", [Authorize(AuthenticationSchemes = "Bearer")] async (INoteRepository rep) => { 
+    return Results.Ok( await rep.GetAllAsync()); 
+    })
     .Produces<List<Note>>(StatusCodes.Status200OK)
     .WithName("GetAllNotes")
     .WithTags("Getters");
 
 
-app.MapGet("/notes/{id:int}", async (INoteRepository rep, int id) =>
+app.MapGet("/notes/{id:int}",[Authorize(AuthenticationSchemes = "Bearer")] 
+    async (INoteRepository rep, int id) =>
     {
         var note = await rep.GetByIdAsync(id);
         if (note == null) return Results.NotFound();
@@ -102,18 +106,20 @@ app.MapGet("/notes/{id:int}", async (INoteRepository rep, int id) =>
     .WithName("Get Single Note by Id")
     .WithTags("Getters");
 
-app.MapGet("/notes/{title}", async (INoteRepository rep, string title) =>
-{
-    var notes = await rep.GetByTitleAsync(title);
-    if (notes == null || notes.Any()) return Results.NotFound();
-    return Results.Ok(notes);
-})
+app.MapGet("/notes/{title}",[Authorize(AuthenticationSchemes = "Bearer")] 
+    async (INoteRepository rep, string title) =>
+    {
+        var notes = await rep.GetByTitleAsync(title);
+        if (notes == null || notes.Any()) return Results.NotFound();
+        return Results.Ok(notes);
+    })
     .Produces<Note>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status404NotFound)
     .WithName("Get notes which contain the search patten in the title")
     .WithTags("Getters");
 
-app.MapPost("/notes", async ([FromBody] Note note, [FromServices] INoteRepository rep) =>
+app.MapPost("/notes",[Authorize(AuthenticationSchemes = "Bearer")] 
+    async ([FromBody] Note note, [FromServices] INoteRepository rep) =>
     {
         await rep.AddAsync(note);
         return Results.Created($"/notes/{note.Id}", note);
@@ -122,7 +128,8 @@ app.MapPost("/notes", async ([FromBody] Note note, [FromServices] INoteRepositor
     .WithName("Create single note")
     .WithTags("Creators");
 
-app.MapPut("/notes", async (INoteRepository rep, [FromBody] Note note) =>
+app.MapPut("/notes",[Authorize(AuthenticationSchemes = "Bearer")] 
+    async (INoteRepository rep, [FromBody] Note note) =>
     {
         await rep.UpdateAsync(note);
         return Results.Ok();
@@ -131,7 +138,8 @@ app.MapPut("/notes", async (INoteRepository rep, [FromBody] Note note) =>
     .WithName("Edit note")
     .WithTags("Updaters");
 
-app.MapDelete("/notes/{id}", async (INoteRepository rep, int id) =>
+app.MapDelete("/notes/{id}",[Authorize(AuthenticationSchemes = "Bearer")] 
+    async (INoteRepository rep, int id) =>
     {
         await rep.RemoveAsync(id);
         return Results.Ok();

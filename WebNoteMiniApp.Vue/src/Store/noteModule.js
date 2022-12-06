@@ -24,7 +24,7 @@ export const noteModule  = {
         async getNotes(context) {
             let token = context.rootGetters['auth/getToken'];
             console.log(token);
-            let response = await fetch("https://localhost:7232/notes", {
+            let response = await fetch("https://localhost:7232/notes/", {
                 method: "Get",
                 headers: { "Accept": "application/json", "Authorization":`Bearer ${token}`},
             });

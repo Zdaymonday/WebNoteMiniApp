@@ -2,7 +2,7 @@ export const authModule = {
     state: {
        isAuthenticated: false,
        hasErrors: true, 
-       errors: ["Кузя", "Гузя", "Пузя"],
+       errors: [],
     },
 
     mutations: {

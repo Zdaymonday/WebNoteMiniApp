@@ -1,9 +1,12 @@
 <template>
     <div class="navbar-container">
         <div class="navbar-search">
-            <div class="inner">
-                <input type="text" placeholder="Search..." />
-                <button>Search</button>
+            <div class="inner">                
+                <input type="text" :value="this.searchPattern" @input="onSearchTextChanged" placeholder="Search..." />
+                <div class="search-btns">
+                    <div class="reset" @click="reset" v-if="this.searchPattern">X</div>
+                    <button @click="search">Search</button>
+                </div>                
             </div>
         </div>
         <div class="navbar-buttons">
@@ -45,7 +48,17 @@ export default {
         },
         logout(){
             this.$store.dispatch("auth/logout",null, {root:true});
-        }
+        },
+        onSearchTextChanged(e){
+            this.searchPattern = e.target.value;            
+        },
+        search(){
+            this.$store.commit("notes/setSearchPattern", this.searchPattern, {root:true});
+        },
+        reset(){
+            this.searchPattern = "";
+            this.$store.commit("notes/setSearchPattern", this.searchPattern, {root:true});
+        },
     },
     data() {
         return{
@@ -53,6 +66,7 @@ export default {
             noteList : {note:true, add:false, events:false},
             addNote : {note:false, add:true, events:false},
             eventList : {note:false, add:false, events:true},
+            searchPattern : "",
         }
     }
 }
@@ -70,15 +84,19 @@ export default {
 
 .navbar-search {
     display: flex;
+    position: relative;
 }
 
 .navbar-buttons {
     display: flex;
 }
 .inner{
-    height: 50px;
+    display: flex;
+    height: 35px;
     margin-right: 25px;
+    
 }
+
 
 button{
     border: none;
@@ -89,5 +107,26 @@ button{
 input{
     font-size: 25px;
     border-radius: 3px;
+}
+
+.search-btns{
+    display: flex;
+    position: relative;
+}
+
+.reset{
+    position: absolute;
+    font-size: 18px;
+    margin-top: 2px;
+    left: -31px; 
+    cursor: pointer;
+    height: 32px;
+    width: 31px;
+    text-align: center;
+    padding-top: 5px;
+    border-radius: 3px;
+}
+.reset:hover{
+    background: #aaaaaa50;
 }
 </style>

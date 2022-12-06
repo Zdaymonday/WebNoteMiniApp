@@ -1,10 +1,11 @@
 export const noteModule  = {
     state: {
         notes: [],
+        searchPattern : "",
     },
     getters: {
         getNoteList(state){
-            return state.notes;
+            return state.notes.filter(note => note.title.includes(state.searchPattern));
         }
     },
     mutations:{        
@@ -17,6 +18,9 @@ export const noteModule  = {
         },
         addNote(state, note){
             state.notes.push(note);
+        },
+        setSearchPattern(state, pattern){
+            state.searchPattern = pattern;
         }
     },
 

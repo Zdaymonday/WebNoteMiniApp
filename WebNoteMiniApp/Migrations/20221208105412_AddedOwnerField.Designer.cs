@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebNoteMiniApp.Data;
 
@@ -10,9 +11,10 @@ using WebNoteMiniApp.Data;
 namespace WebNoteMiniApp.Migrations
 {
     [DbContext(typeof(NoteDb))]
-    partial class NoteDbModelSnapshot : ModelSnapshot
+    [Migration("20221208105412_AddedOwnerField")]
+    partial class AddedOwnerField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

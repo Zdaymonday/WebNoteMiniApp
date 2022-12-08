@@ -17,6 +17,7 @@ builder.Services.AddDbContext<UserDb>(opt =>
 
 builder.Services.AddIdentity<NoteUser, IdentityRole>().AddEntityFrameworkStores<UserDb>();
 
+builder.Services.AddTransient<UserService>();
 builder.Services.AddTransient<INoteRepository, NoteRepository>();
 builder.Services.AddSingleton<ITokenService>(new TokenService());
 
@@ -76,7 +77,7 @@ app.MapPost("/login", [AllowAnonymous] async (SignInManager<NoteUser> signInMana
     return Results.Ok(token);
 });
 
-app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManager, ITokenService tokenServ, [FromBody] UserModel model, HttpContext context) =>
+app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManager, ITokenService tokenServ, [FromBody] UserModel model) =>
 {
     var user = new NoteUser() { UserName = model.UserName };
     var result = await userManager.CreateAsync(user, model.Password);
@@ -87,7 +88,8 @@ app.MapPost("/register", [AllowAnonymous] async (UserManager<NoteUser> userManag
 });
 
 
-app.MapGet("/notes", [Authorize(AuthenticationSchemes = "Bearer")] async (INoteRepository rep) => { 
+app.MapGet("/notes", [Authorize(AuthenticationSchemes = "Bearer")] 
+    async (INoteRepository rep) => {
     return Results.Ok( await rep.GetAllAsync()); 
     })
     .Produces<List<Note>>(StatusCodes.Status200OK)

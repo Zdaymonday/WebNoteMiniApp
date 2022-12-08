@@ -3,30 +3,40 @@
     public class NoteRepository : INoteRepository
     {
         private readonly NoteDb db;
+        private readonly UserService userService;
 
-        public NoteRepository(NoteDb db)
+        public NoteRepository(NoteDb db, UserService userService)
         {
             this.db = db;
+            this.userService = userService;
         }
 
 
         public async Task<IEnumerable<Note>> GetAllAsync()
         {
-            return await db.Notes.ToArrayAsync();
+            var userId = await userService.GetUserId();
+            return await db.Notes.Where(n => n.OwnerId == userId).ToArrayAsync();
         }
 
         public async Task<Note> GetByIdAsync(int id)
         {
-            return await db.Notes.FirstOrDefaultAsync(note => note.Id == id);
+            var userId = await userService.GetUserId();
+            return await db.Notes.FirstOrDefaultAsync(n => n.Id == id && n.OwnerId == userId);
         }
 
         public async Task<IEnumerable<Note>> GetByTitleAsync(string title)
         {
-            return await db.Notes.Where(note => note.Title.Contains(title)).ToArrayAsync();
+            var userId = await userService.GetUserId();
+            return await db.Notes
+                .Where(n => n.Title.Contains(title) && n.OwnerId == userId)
+                .ToArrayAsync();
         }
 
         public async Task AddAsync(Note note)
         {
+            var userId = await userService.GetUserId();
+            note.OwnerId = userId;
+            note.Created = DateTime.Now.ToString();
             await db.Notes.AddAsync(note);
             await db.SaveChangesAsync();
         }
@@ -47,6 +57,7 @@
             db.Remove(res);
             await db.SaveChangesAsync();
         }
+
 
     }
 }
